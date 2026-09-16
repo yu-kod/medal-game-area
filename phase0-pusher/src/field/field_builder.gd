@@ -6,6 +6,7 @@ extends RefCounted
 ## 還元率は乱数ではなく、ここで決まる形状だけで決まる(設計書 5章)。
 ## 下段フィールドの床は側壁より内側に寄せてあり、その差分がサイドの落とし穴になる。
 
+
 static func build(parent: Node3D) -> void:
 	var floor_depth := MachineSpec.FLOOR_Z_FRONT - MachineSpec.FLOOR_Z_BACK
 	var floor_center_z := (MachineSpec.FLOOR_Z_FRONT + MachineSpec.FLOOR_Z_BACK) * 0.5

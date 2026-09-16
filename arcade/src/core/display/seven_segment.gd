@@ -14,16 +14,16 @@ const DIGIT_GAP := 0.09
 
 ## a b c d e f g の点灯パターン。添字が数字そのもの。
 const PATTERNS := [
-	[true, true, true, true, true, true, false],      # 0
+	[true, true, true, true, true, true, false],  # 0
 	[false, true, true, false, false, false, false],  # 1
-	[true, true, false, true, true, false, true],     # 2
-	[true, true, true, true, false, false, true],     # 3
-	[false, true, true, false, false, true, true],    # 4
-	[true, false, true, true, false, true, true],     # 5
-	[true, false, true, true, true, true, true],      # 6
-	[true, true, true, false, false, false, false],   # 7
-	[true, true, true, true, true, true, true],       # 8
-	[true, true, true, true, false, true, true],      # 9
+	[true, true, false, true, true, false, true],  # 2
+	[true, true, true, true, false, false, true],  # 3
+	[false, true, true, false, false, true, true],  # 4
+	[true, false, true, true, false, true, true],  # 5
+	[true, false, true, true, true, true, true],  # 6
+	[true, true, true, false, false, false, false],  # 7
+	[true, true, true, true, true, true, true],  # 8
+	[true, true, true, true, false, true, true],  # 9
 ]
 
 var _segments: Array = []
@@ -72,13 +72,13 @@ func _build_digit(center_x: float) -> Array:
 
 	# 添字の順は PATTERNS と同じ a b c d e f g。
 	var layout := [
-		[horizontal, Vector3(center_x, half_h, 0.0)],   # a 上
-		[vertical, Vector3(center_x + vx, vy, 0.0)],    # b 右上
-		[vertical, Vector3(center_x + vx, -vy, 0.0)],   # c 右下
+		[horizontal, Vector3(center_x, half_h, 0.0)],  # a 上
+		[vertical, Vector3(center_x + vx, vy, 0.0)],  # b 右上
+		[vertical, Vector3(center_x + vx, -vy, 0.0)],  # c 右下
 		[horizontal, Vector3(center_x, -half_h, 0.0)],  # d 下
-		[vertical, Vector3(center_x - vx, -vy, 0.0)],   # e 左下
-		[vertical, Vector3(center_x - vx, vy, 0.0)],    # f 左上
-		[horizontal, Vector3(center_x, 0.0, 0.0)],      # g 中
+		[vertical, Vector3(center_x - vx, -vy, 0.0)],  # e 左下
+		[vertical, Vector3(center_x - vx, vy, 0.0)],  # f 左上
+		[horizontal, Vector3(center_x, 0.0, 0.0)],  # g 中
 	]
 
 	var meshes := []

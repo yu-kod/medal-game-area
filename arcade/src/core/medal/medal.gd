@@ -10,10 +10,7 @@ var _ccd_remaining := 0.0
 
 
 static func create(
-	shape: ConvexPolygonShape3D,
-	mesh: Mesh,
-	material: Material,
-	physics_material: PhysicsMaterial
+	shape: ConvexPolygonShape3D, mesh: Mesh, material: Material, physics_material: PhysicsMaterial
 ) -> Medal:
 	var medal := Medal.new()
 	medal.mass = MedalSpec.MASS

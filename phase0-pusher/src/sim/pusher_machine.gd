@@ -126,11 +126,7 @@ func _seed_field() -> void:
 	# 壁が後退を止め、厚みが前へこぼれる圧力を生む。この 2 つが押し出しの正体。
 	_seed_layer(MachineSpec.PUSHER_TOP_Y + 0.05, upper_back, upper_front, pitch, 0.0)
 	_seed_layer(
-		MachineSpec.PUSHER_TOP_Y + 0.10,
-		upper_back + pitch * 0.5,
-		upper_front,
-		pitch,
-		pitch * 0.5
+		MachineSpec.PUSHER_TOP_Y + 0.10, upper_back + pitch * 0.5, upper_front, pitch, pitch * 0.5
 	)
 	# 下段はプッシャー前面に密着させる。ここが切れていると前面が空を押す。
 	_seed_layer(

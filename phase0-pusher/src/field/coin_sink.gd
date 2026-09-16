@@ -7,9 +7,9 @@ extends Area3D
 ## 計数が必要な穴の周辺だけをこの Area3D が見る。
 
 enum Kind {
-	PAYOUT,     ## 前端を越えた = 払い出し
+	PAYOUT,  ## 前端を越えた = 払い出し
 	SIDE_LOSS,  ## サイドの落とし穴 = 損
-	VOID,       ## どこにも該当せず落ちてきた = 異常
+	VOID,  ## どこにも該当せず落ちてきた = 異常
 }
 
 signal coin_sunk(coin: Coin, kind: int)

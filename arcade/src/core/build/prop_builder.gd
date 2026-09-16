@@ -54,11 +54,7 @@ static func static_ramp(
 
 ## 当たり判定を持たない飾り。マーキー・銘板・光る面など。
 static func decor_box(
-	parent: Node3D,
-	node_name: String,
-	size: Vector3,
-	center: Vector3,
-	material: Material
+	parent: Node3D, node_name: String, size: Vector3, center: Vector3, material: Material
 ) -> MeshInstance3D:
 	var visual := _mesh_instance(size, material)
 	visual.name = node_name

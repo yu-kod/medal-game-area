@@ -147,21 +147,23 @@ func _quit_after(seconds: float) -> void:
 			# 何往復もかかるので、短い試験では供給が場に溜まったまま終わる。
 			print(
 				(
-					"[soak] %.0f秒  場 %d枚  投入 %d  払い出し %d  横穴 %d  逸脱 %d\n"
-					+ "       チェッカー %d  抽選当たり %d枚(未払出 %d)  還元率 %.0f%%"
+					(
+						"[soak] %.0f秒  場 %d枚  投入 %d  払い出し %d  横穴 %d  逸脱 %d\n"
+						+ "       チェッカー %d  抽選当たり %d枚(未払出 %d)  還元率 %.0f%%"
+					)
+					% [
+						seconds,
+						station.active_count(),
+						station.insert_count,
+						station.payout_count,
+						station.side_loss_count,
+						station.void_count,
+						station.chucker_count,
+						station.lottery_reward,
+						station.hopper.pending() if station.hopper != null else 0,
+						station.lifetime_payout_ratio() * 100.0,
+					]
 				)
-				% [
-					seconds,
-					station.active_count(),
-					station.insert_count,
-					station.payout_count,
-					station.side_loss_count,
-					station.void_count,
-					station.chucker_count,
-					station.lottery_reward,
-					station.hopper.pending() if station.hopper != null else 0,
-					station.lifetime_payout_ratio() * 100.0,
-				]
 			)
 			get_tree().quit()
 	)

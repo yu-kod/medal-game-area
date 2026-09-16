@@ -147,22 +147,24 @@ func _trace() -> void:
 			lower_back = minf(lower_back, p.z)
 	print(
 		(
-			"[trace] t=%5.1f pusher_front=%+.3f awake=%3d"
-			+ " | 上段 %3d 枚 z=[%+.2f,%+.2f] | 下段 %3d 枚 z=[%+.2f,%+.2f] | 払出=%d 側落=%d"
+			(
+				"[trace] t=%5.1f pusher_front=%+.3f awake=%3d"
+				+ " | 上段 %3d 枚 z=[%+.2f,%+.2f] | 下段 %3d 枚 z=[%+.2f,%+.2f] | 払出=%d 側落=%d"
+			)
+			% [
+				_stage_time,
+				machine.pusher.front_z(),
+				awake,
+				upper_count,
+				upper_back,
+				upper_front,
+				lower_count,
+				lower_back,
+				lower_front,
+				machine.payout_count,
+				machine.side_loss_count,
+			]
 		)
-		% [
-			_stage_time,
-			machine.pusher.front_z(),
-			awake,
-			upper_count,
-			upper_back,
-			upper_front,
-			lower_count,
-			lower_back,
-			lower_front,
-			machine.payout_count,
-			machine.side_loss_count,
-		]
 	)
 
 
@@ -244,9 +246,12 @@ func _report() -> int:
 	print("==================================================")
 	print(" Phase 0 コイン物理 検証結果  [%s]" % label)
 	print("==================================================")
-	print(" 充填            : %.1fs / peak %d 枚 / 終了時 %d 枚" % [
-		_fill_seconds, _active_peak, _active_at_end
-	])
+	print(
+		(
+			" 充填            : %.1fs / peak %d 枚 / 終了時 %d 枚"
+			% [_fill_seconds, _active_peak, _active_at_end]
+		)
+	)
 	print(" 連続運転        : %.0fs" % soak_seconds)
 	print(" 払い出し        : %d 枚 (%.1f 枚/分)" % [machine.payout_count, payout_per_min])
 	print(" サイド落下      : %d 枚" % machine.side_loss_count)
@@ -257,9 +262,12 @@ func _report() -> int:
 	print(" 境界外へ逸脱    : %d 回" % _out_of_bounds)
 	print(" 静定時の起床数  : %d 枚 / 最大速度 %.4f m/s" % [_settle_awake, _settle_max_velocity])
 	print(" めり込みの組    : %d" % _interpenetrating_pairs)
-	print(" フレーム時間    : avg %.2fms / p99 %.2fms / max %.2fms (予算 %.2fms)" % [
-		frame_avg, frame_p99, frame_max, FRAME_BUDGET_MS
-	])
+	print(
+		(
+			" フレーム時間    : avg %.2fms / p99 %.2fms / max %.2fms (予算 %.2fms)"
+			% [frame_avg, frame_p99, frame_max, FRAME_BUDGET_MS]
+		)
+	)
 	if _headless:
 		print(" 描画 fps        : 計測なし (headless)")
 	else:
@@ -268,18 +276,13 @@ func _report() -> int:
 
 	var failures := 0
 	failures += _criterion(
-		"アクティブ 200 枚が山を形成した",
-		_active_peak >= MachineSpec.TARGET_ACTIVE and not _fill_timed_out
+		"アクティブ 200 枚が山を形成した", _active_peak >= MachineSpec.TARGET_ACTIVE and not _fill_timed_out
 	)
-	failures += _criterion(
-		"物理が 120Hz の予算に収まっている",
-		frame_p99 <= FRAME_BUDGET_MS
-	)
+	failures += _criterion("物理が 120Hz の予算に収まっている", frame_p99 <= FRAME_BUDGET_MS)
 	if not _headless:
 		failures += _criterion("描画 60fps を維持している", fps_avg >= 60.0 and _fps_min >= 55.0)
 	failures += _criterion(
-		"山が静止したときコインが震え続けない",
-		_settle_awake == 0 and _settle_max_velocity < JITTER_VELOCITY_EPS
+		"山が静止したときコインが震え続けない", _settle_awake == 0 and _settle_max_velocity < JITTER_VELOCITY_EPS
 	)
 	failures += _criterion(
 		"台や他のコインを貫通しない",
@@ -298,8 +301,7 @@ func _report() -> int:
 		machine.payout_count > 0 and late_payout > 0
 	)
 	failures += _criterion(
-		"連続運転でコインが吹き飛ぶ/消失しない",
-		_out_of_bounds == 0 and pool_total == machine.pool_size
+		"連続運転でコインが吹き飛ぶ/消失しない", _out_of_bounds == 0 and pool_total == machine.pool_size
 	)
 	print("--------------------------------------------------")
 	print(" RESULT: %s" % ("PASS" if failures == 0 else "FAIL (%d)" % failures))

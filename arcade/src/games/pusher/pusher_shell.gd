@@ -201,9 +201,7 @@ static func _build_housing(parent: Node3D) -> void:
 			parent,
 			"FrontPanel%s" % ("L" if side < 0.0 else "R"),
 			Vector3(
-				front_width,
-				PusherSpec.GLASS_Y_TOP - PusherSpec.GLASS_Y_BOTTOM,
-				PANEL_THICKNESS
+				front_width, PusherSpec.GLASS_Y_TOP - PusherSpec.GLASS_Y_BOTTOM, PANEL_THICKNESS
 			),
 			Vector3(
 				side * (glass_edge + front_width * 0.5),
@@ -220,7 +218,11 @@ static func _build_housing(parent: Node3D) -> void:
 		PropBuilder.static_box(
 			parent,
 			"MouthPanel%s" % ("L" if side < 0.0 else "R"),
-			Vector3(mouth_width, PusherSpec.GLASS_Y_BOTTOM - apron_top, PusherSpec.CABINET_Z_FRONT - PusherSpec.GLASS_Z),
+			Vector3(
+				mouth_width,
+				PusherSpec.GLASS_Y_BOTTOM - apron_top,
+				PusherSpec.CABINET_Z_FRONT - PusherSpec.GLASS_Z
+			),
 			Vector3(
 				side * (mouth_edge + mouth_width * 0.5),
 				(PusherSpec.GLASS_Y_BOTTOM + apron_top) * 0.5,
@@ -249,9 +251,7 @@ static func _build_housing(parent: Node3D) -> void:
 			parent,
 			"EdgeLight%s" % ("L" if side < 0.0 else "R"),
 			Vector3(0.05, 0.05, depth * 0.86),
-			Vector3(
-				side * PusherSpec.CABINET_HALF_WIDTH, PusherSpec.GLASS_Y_TOP - 0.06, center_z
-			),
+			Vector3(side * PusherSpec.CABINET_HALF_WIDTH, PusherSpec.GLASS_Y_TOP - 0.06, center_z),
 			SurfacePalette.accent_glow()
 		)
 
@@ -297,9 +297,7 @@ static func _build_house_lights(parent: Node3D, simulated: bool) -> void:
 	# 灯具は天板の裏、ガラス寄りに吊って奥へ向ける。実機の内照と同じ位置。
 	var wash := SpotLight3D.new()
 	wash.name = "BackboardWash"
-	wash.position = Vector3(
-		0.0, PusherSpec.GLASS_Y_TOP - 0.30, PusherSpec.BACKBOARD_Z + 2.20
-	)
+	wash.position = Vector3(0.0, PusherSpec.GLASS_Y_TOP - 0.30, PusherSpec.BACKBOARD_Z + 2.20)
 	wash.rotation_degrees = Vector3(-32.0, 180.0, 0.0)
 	wash.light_color = Color(0.72, 0.80, 1.0)
 	wash.light_energy = 1.6

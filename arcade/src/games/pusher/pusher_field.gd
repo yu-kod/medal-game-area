@@ -67,9 +67,7 @@ static func _add_floor_slab(
 		node_name,
 		Vector3(width, FLOOR_THICKNESS, depth),
 		Vector3(
-			x_start + width * 0.5,
-			PusherSpec.FLOOR_Y - FLOOR_THICKNESS * 0.5,
-			z_start + depth * 0.5
+			x_start + width * 0.5, PusherSpec.FLOOR_Y - FLOOR_THICKNESS * 0.5, z_start + depth * 0.5
 		),
 		SurfacePalette.playfield(),
 		ContactMaterials.playfield()
@@ -353,11 +351,7 @@ static func _add_payout_port(parent: Node3D, duct_back: float, slab: float) -> v
 		PropBuilder.static_box(
 			parent,
 			"DeckPort%s" % ("L" if side < 0.0 else "R"),
-			Vector3(
-				absf(outer - inner),
-				PusherSpec.DECK_Y_TOP - PusherSpec.DECK_Y_BOTTOM,
-				slab
-			),
+			Vector3(absf(outer - inner), PusherSpec.DECK_Y_TOP - PusherSpec.DECK_Y_BOTTOM, slab),
 			Vector3(
 				(outer + inner) * 0.5,
 				(PusherSpec.DECK_Y_TOP + PusherSpec.DECK_Y_BOTTOM) * 0.5,
@@ -404,11 +398,7 @@ static func _add_payout_port(parent: Node3D, duct_back: float, slab: float) -> v
 		PropBuilder.decor_box(
 			parent,
 			"PayoutPortEdge%s" % ("L" if side < 0.0 else "R"),
-			Vector3(
-				0.04,
-				PusherSpec.PAYOUT_PORT_Y_TOP - PusherSpec.PAYOUT_PORT_Y_BOTTOM,
-				0.04
-			),
+			Vector3(0.04, PusherSpec.PAYOUT_PORT_Y_TOP - PusherSpec.PAYOUT_PORT_Y_BOTTOM, 0.04),
 			Vector3(side * port, frame_y, PusherSpec.DECK_Z_FRONT + 0.02),
 			SurfacePalette.accent_glow()
 		)
@@ -420,8 +410,10 @@ static func _add_payout_port(parent: Node3D, duct_back: float, slab: float) -> v
 static func _add_edge(parent: Node3D) -> void:
 	var pitch := atan2(PusherSpec.EDGE_HEIGHT, PusherSpec.EDGE_DEPTH)
 	var length := sqrt(
-		PusherSpec.EDGE_DEPTH * PusherSpec.EDGE_DEPTH
-		+ PusherSpec.EDGE_HEIGHT * PusherSpec.EDGE_HEIGHT
+		(
+			PusherSpec.EDGE_DEPTH * PusherSpec.EDGE_DEPTH
+			+ PusherSpec.EDGE_HEIGHT * PusherSpec.EDGE_HEIGHT
+		)
 	)
 	var thickness := 0.12
 	var center_z := PusherSpec.FLOOR_Z_FRONT - PusherSpec.EDGE_DEPTH * 0.5
@@ -437,10 +429,7 @@ static func _add_edge(parent: Node3D) -> void:
 			parent,
 			"Edge_%d" % int(span[0] * 100.0),
 			Vector3(width, thickness, length),
-			(
-				Vector3((span[0] + span[1]) * 0.5, center_y, center_z)
-				- normal * (thickness * 0.5)
-			),
+			Vector3((span[0] + span[1]) * 0.5, center_y, center_z) - normal * (thickness * 0.5),
 			SurfacePalette.playfield(),
 			ContactMaterials.playfield()
 		)
@@ -584,10 +573,26 @@ static func _add_ported_wall(
 	var port_z_back := PusherSpec.RAIL_Z - PusherSpec.RAIL_PORT_HALF_DEPTH
 	var port_z_front := PusherSpec.RAIL_Z + PusherSpec.RAIL_PORT_HALF_DEPTH
 	_add_slab(
-		parent, base_name + "Back", x_center, x_size, z_start, port_z_back, y_bottom, y_top, material
+		parent,
+		base_name + "Back",
+		x_center,
+		x_size,
+		z_start,
+		port_z_back,
+		y_bottom,
+		y_top,
+		material
 	)
 	_add_slab(
-		parent, base_name + "Front", x_center, x_size, port_z_front, z_end, y_bottom, y_top, material
+		parent,
+		base_name + "Front",
+		x_center,
+		x_size,
+		port_z_front,
+		z_end,
+		y_bottom,
+		y_top,
+		material
 	)
 	_add_slab(
 		parent,

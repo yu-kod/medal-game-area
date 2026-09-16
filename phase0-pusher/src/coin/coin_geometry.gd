@@ -5,6 +5,7 @@ extends RefCounted
 ##
 ## プール全体で 1 つずつを共有するので、生成はプール初期化時の一度だけ。
 
+
 ## 16 角柱の凸包。薄い円柱プリミティブは剛体ソルバの最悪ケースなので使わない。
 static func build_collision_shape() -> ConvexPolygonShape3D:
 	var half_thickness := MachineSpec.COIN_COLLISION_THICKNESS * 0.5

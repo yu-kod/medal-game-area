@@ -24,9 +24,7 @@ static func create() -> Pusher:
 	pusher.collision_mask = 0
 
 	var size := Vector3(
-		MachineSpec.PUSHER_HALF_WIDTH * 2.0,
-		MachineSpec.PUSHER_TOP_Y,
-		MachineSpec.PUSHER_DEPTH
+		MachineSpec.PUSHER_HALF_WIDTH * 2.0, MachineSpec.PUSHER_TOP_Y, MachineSpec.PUSHER_DEPTH
 	)
 	var center_z := (MachineSpec.PUSHER_Z_REAR_HOME + MachineSpec.PUSHER_Z_FRONT_HOME) * 0.5
 	pusher.position = Vector3(0.0, MachineSpec.PUSHER_TOP_Y * 0.5, center_z)
