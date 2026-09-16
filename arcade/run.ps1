@@ -1,4 +1,4 @@
-# 台を起動する。既定は手で遊ぶ状態(自動投入なし・計器なし)。
+﻿# 台を起動する。既定は手で遊ぶ状態(自動投入なし・計器なし)。
 #
 #   .\run.ps1                      窓を開けて手で遊ぶ
 #   .\run.ps1 -Debug               左上に検証用の計器を出す(-Dev も同じ)
@@ -28,7 +28,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$godot = "C:\Users\yukku\tools\godot\Godot_v4.7.1-stable_win64_console.exe"
+# 既定は開発機の置き場所。別の場所に入れている場合は環境変数 GODOT で指定する。
+$godot = if ($env:GODOT) { $env:GODOT } else { "C:\Users\yukku\tools\godot\Godot_v4.7.1-stable_win64_console.exe" }
 $project = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 if (-not (Test-Path $godot)) { throw "Godot が見つからない: $godot" }
