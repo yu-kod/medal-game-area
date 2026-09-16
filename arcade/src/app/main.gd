@@ -20,6 +20,7 @@ var room: ArcadeRoom
 var island: PusherIsland
 var wallet: PlayerWallet
 var camera: Camera3D
+var save_state: PlayerState
 
 
 func _ready() -> void:
@@ -30,8 +31,18 @@ func _ready() -> void:
 	room = ArcadeRoom.create()
 	add_child(room)
 
+	# 前回の続きを読む。壊れていても無くても初期状態で始まるだけで、起動は止まらない。
+	save_state = SaveStore.load_state()
+	save_state.stamp_visit(int(Time.get_unix_time_from_system()))
+	SaveStore.save(save_state)
+
 	wallet = PlayerWallet.new()
+	# 現金はセッションを跨いで残る。
+	wallet.add_cash(save_state.cash)
+	# 手持ちメダルは残らない。設計書 §12 の PlayerState に項目が無く、
+	# §8 のとおり跨いで残る資産は預かりメダルだけ。毎回 --credit から始める。
 	wallet.add_medals(int(options.get("credit", DEFAULT_CREDIT)))
+	wallet.cash_changed.connect(_on_cash_changed)
 
 	island = PusherIsland.new()
 	island.name = "PusherIsland"
@@ -72,6 +83,15 @@ func _ready() -> void:
 
 	if options.has("seconds"):
 		_quit_after(float(options["seconds"]))
+
+
+## 現金が動いたら書き出す。
+##
+## 終了時だけに寄せると、落ちたときに丸ごと失う。変わった時点で書く。
+## クリッカー(#5)が入って更新が毎秒になるようなら、そこで間引きを考える。
+func _on_cash_changed(cash: int) -> void:
+	save_state.cash = cash
+	SaveStore.save(save_state)
 
 
 ## 既定は台が決める観覧位置。`--cam` / `--look` / `--fov` で上書きできる。
