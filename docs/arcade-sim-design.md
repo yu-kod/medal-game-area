@@ -88,6 +88,33 @@ Jolt は動的物体が 0.1〜10m の範囲にあることを前提に調整さ�
 カメラの FOV と近接距離で見た目の辻褄を合わせる。重力は絶対にいじらないこと。
 スケールを変えて重力を変えると、落下の見た目が一気に嘘くさくなる。
 
+> [!IMPORTANT]
+> **訂正(実装は上記に従っていない)**
+>
+> 上の「重力は変更しない」は誤り。**実装は重力 98 m/s² を使っている。**
+> 上の記述は設計判断の経緯として残してあるが、そのまま実装しないこと。
+>
+> 剛体系は「長さ k 倍・重力 a 倍」のとき時間が √(k/a) 倍にスケールする。
+> k = 10 で重力を 9.8 のまま(a = 1)にすると時間が √10 ≒ 3.16 倍に伸び、
+> **実物の 1/3 の速さで落ちる。** これが「メダルが軽く見える」の正体であって、
+> 質量ではない(全ての動体の質量を一様に変えても運動は数学的に変わらない)。
+>
+> a = k = 10、つまり **9.8 × 10 = 98 m/s²** にして初めて sim 秒 = 実秒 になる。
+>
+> この結果、秒で書かれた定数の意味も変わる。重力 9.8 のときの「2 秒周期」は
+> 実時間では 0.63 秒/往復という実機にあり得ない速さだった。
+> **この設計書で秒が出てくる箇所は、すべて実時間として読み直すこと。**
+>
+> | | 設計書 | 実装 |
+> |---|---|---|
+> | 重力 | 9.8 m/s² | **98 m/s²** |
+> | 物理ティック | 120 Hz | **180 Hz**(速度が √10 倍になるぶん時間解像度を上げる) |
+>
+> - 設定値: `arcade/project.godot` の `physics/3d/default_gravity`
+> - 詳しい導出: `arcade/src/core/medal/medal_spec.gd` の冒頭
+> - 見張っているテスト: `arcade/tests/core/medal/medal_spec_test.gd` の
+>   `test_gravity_matches_the_scale`(ProjectSettings から直接読んで検算している)
+
 ### 4.2 コインの形状
 薄い円柱は剛体ソルバの最悪ケース(貫通・ジッター・不安定な積層)。以下で緩和する。
 
@@ -106,6 +133,27 @@ physics/jolt_3d/simulation/position_steps = 2
 physics/jolt_3d/simulation/baumgarte_stabilization_factor = 0.2
 physics/jolt_3d/simulation/allow_sleep = true
 ```
+
+> [!IMPORTANT]
+> **訂正(このキー名では設定が効かない)**
+>
+> 上の `physics/jolt_3d/...` は旧アドオン版の接頭辞で、**Godot 4.7.1 には存在しない。**
+> エンジンに問い合わせて確認済み。
+>
+> ```
+> physics/jolt_3d/simulation/velocity_steps            exists=false
+> physics/jolt_physics_3d/simulation/velocity_steps    exists=true
+> ```
+>
+> 存在しないキーを書いてもエラーにはならず、**黙って無視される。**
+> 設定したつもりで既定値のまま動くので、ソルバを調整したのに何も変わらないという
+> 形でしか気づけない。正しい接頭辞は **`physics/jolt_physics_3d/`**。
+>
+> `physics/3d/physics_engine` の既定値は `DEFAULT` なので、
+> 曖昧さを消すため実装では `"Jolt Physics"` を明示指定している。
+>
+> 実際に使っている値は `arcade/project.godot` の `[physics]` にあり、
+> それぞれ何を見て決めたかがコメントで併記してある。
 
 コイン側:
 - `continuous_cd = true`(投入直後の高速落下時のみ。着地後は false に落として負荷を下げる)
