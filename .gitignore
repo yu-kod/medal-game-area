@@ -27,3 +27,8 @@ desktop.ini
 # --- テスト ---
 # gdUnit4 が吐くレポート(HTML/XML)。CI ではアーティファクトとして拾う。
 /arcade/reports/
+
+# --- Claude Code ---
+# スキルだけ共有する。ローカルの設定と履歴は持ち込まない。
+.claude/*
+!.claude/skills/

@@ -1,26 +1,172 @@
-# AWS Guidance
+# medal-game-area 開発ルール
 
-- Prefer the AWS MCP Server for AWS interactions — it provides sandboxed
-  execution, observability, and audit logging. If unavailable, use the
-  AWS CLI directly.
-- Before starting a task, check whether a relevant AWS skill is available.
-  Load the skill with `retrieve_skill` and prefer its guidance over
-  general knowledge.
-- When uncertain about specific AWS details (API parameters, permissions,
-  limits, error codes), verify against documentation rather than guessing.
-  State uncertainty explicitly if you cannot confirm.
-- When creating infrastructure, prefer infrastructure-as-code (AWS CDK or
-  CloudFormation) over direct CLI commands.
-- When working with infrastructure, follow AWS Well-Architected Framework
-  principles.
-- Do not use em dashes in AWS resource names or descriptions. Use
-  hyphens instead.
+メダルゲームコーナーのシミュレーター。Godot 4.7.1 / GDScript。
 
-## Secret Safety
+## 開発の進め方
 
-- MUST load the `aws-secrets-manager` skill first for any secret,
-  credential, API key, token, or password task. MUST NOT call
-  `secretsmanager get-secret-value` or `batch-get-secret-value`, and MUST
-  NOT hit the Secrets Manager Agent daemon directly. MUST use
-  `{{resolve:secretsmanager:secret-id:SecretString:json-key}}` with
-  `asm-exec` so the secret resolves at runtime without entering context.
+実装を始める前に、必ず `.claude/skills/coding-standards.md` を読み、その内容に従うこと。
+TDD の進め方、テストの書き方、実測済みの物理定数の扱い方が書いてある。
+
+### 参照するタイミング
+
+- **新しい機能の実装を始める前** — 最初に書くテストの方針を決める
+- **物理定数や Spec に触る前** — 動かしてよい値か判断する
+- **設計判断に迷った時** — テスタビリティの観点から評価する
+- **リファクタリングの前** — 改善方針を確認する
+
+ルールに従えない・判断できない場合は**スキルファイル自体が不十分**。
+実装を進める前にスキルの修正を優先する。
+
+### 絶対のルール
+
+- 失敗するテストなしにプロダクションコードを書かない
+- テストの実行確認を省略しない(Red で失敗、Green で成功を毎回見る)
+- 実測で決まった物理値を、理由を書かずに動かさない
+- 盤面の払い出しに確率の補正を入れない(設計書 5 章)
+- グローバルの `randi()` / `randf()` を使わない。種を指定した `RandomNumberGenerator` を持つ
+- `PlayerWallet` に逆両替にあたる関数を生やさない(設計書 6.1)
+
+---
+
+## リポジトリの構成
+
+```
+arcade/              本体。ここを育てる
+  src/               実装
+  tests/             gdUnit4 のテスト(src と同じ階層で置く)
+  addons/gdUnit4/    テストフレームワーク(外部のコード。触らない)
+phase0-pusher/       物理の検証台。凍結済み
+docs/                設計書
+scripts/check.ps1    CI と同じ検査
+```
+
+### phase0-pusher は凍結してある
+
+「プッシャーの押し出しが物理的に成立するか」を実測で確かめた検証台で、
+結果ごと凍結してある。`arcade` の物理設定はここで合格した値を持ち込んだもの。
+
+**振る舞いを変える変更もテストも入れない。** CI は構文チェックだけ通している。
+
+---
+
+## 仕様
+
+設計書は `docs/arcade-sim-design.md`。ゲームの内容に触る前に読むこと。
+
+**ただし 4.1 のスケールと重力の記述だけは誤っている。**
+長さを 10 倍にしたら重力も 10 倍(98 m/s²)にする。合わせないと世界が
+スローモーションになる。詳細は `arcade/src/core/medal/medal_spec.gd` の冒頭と、
+`arcade/tests/core/medal/medal_spec_test.gd` の `test_gravity_matches_the_scale`。
+
+設計書の数値は暫定で、実測で変わる前提になっている。
+**マジックナンバーを実装に直接書かず、Spec クラスに集める。**
+
+---
+
+## 動かす
+
+```
+play.cmd                   手で遊ぶ
+play.cmd -Debug            左上に検証用の計器を出す
+play.cmd -Debug -Demo      自動投入を回して放置観察する(挙動を詰めるときはこれ)
+play.cmd -Import           class_name を追加したあとに 1 度通す
+
+check.cmd                  CI と同じ検査を全部(format / lint / import / test)
+check.cmd -Only test       テストだけ
+check.cmd -Fix             gdformat をかけてから全部
+```
+
+物理の挙動は**目で見て確かめる**領域で、単体テストでは判定できない。
+積み上がりや崩れを変えたときは `play.cmd -Debug -Demo` で数分放置して見ること。
+
+---
+
+## チケット管理(GitHub Issues)
+
+作業の単位は **GitHub Issue** とする。
+
+- **Issue のないコードは書かない。** まず Issue を立て「何を・なぜ」を書いてから着手する
+- 1 つの Issue は **1 つの論理的な変更**に対応させる
+- タイトルは日本語で、何が達成されるかが分かる形にする
+  (例: `チェッカー通過時の保留ランプを筐体に出す`)
+- 着手時に Issue を自分にアサインする
+- Issue は PR がマージされた時点でクローズする(PR 本文の `Closes #N`)
+
+### Issue とコミット / PR の紐付け
+
+- コミットの subject 末尾に Issue 番号を `(#N)` の形で入れる
+
+  ```
+  feat: チェッカー通過時の保留ランプを筐体に出す (#12)
+  ```
+
+- PR 本文に `Closes #N` を書き、マージで Issue が閉じるようにする
+
+---
+
+## ブランチ戦略(トランクベース開発)
+
+- **`main`** がトランク。常に遊べる状態を保つ
+- 作業は**短命のフィーチャーブランチ**で行い、PR 経由で main にマージする
+- ブランチ命名: `feature/xxx`, `fix/xxx`, `refactor/xxx`, `chore/xxx`
+- 1 つの PR は 1 つの論理的な変更に対応させる
+- **main への直接 push は禁止。** CI が通った PR のみマージする
+- マージ後のブランチは削除する
+
+### コミットメッセージ
+
+Conventional Commits の prefix ＋ 日本語の本文。
+
+| prefix | 用途 |
+|---|---|
+| `feat:` | 機能追加 |
+| `fix:` | バグ修正 |
+| `refactor:` | 挙動を変えない内部改善 |
+| `style:` | 書式のみ(gdformat 等) |
+| `test:` | テストの追加・修正 |
+| `chore:` | 設定・依存関係・雑務 |
+| `ci:` | CI の設定 |
+| `docs:` | ドキュメント |
+| `revert:` | 変更の取り消し |
+
+**整形だけのコミットは `style:` で単独にする。** 実装の差分と混ぜると
+何を直したのかが読めなくなる。
+
+---
+
+## CI
+
+`.github/workflows/ci.yml`。変更のあったディレクトリのジョブだけ走る。
+
+| ジョブ | 内容 |
+|---|---|
+| `lint` | gdformat --check / gdlint |
+| `arcade` | インポート + gdUnit4 のテスト |
+| `phase0` | インポート(構文チェック)のみ |
+| `ci` | 上記の結果を集約する |
+
+**必須ステータスチェックには `ci` だけを指定すること。**
+個別ジョブを指定すると、変更検出で skip されたときに success にならず、
+そのディレクトリを触っていない PR が永久にマージできなくなる。
+
+ローカルで同じ検査を回すには `check.cmd`。
+検査を足すときは `scripts/check.ps1` と `ci.yml` の両方を直す。
+
+---
+
+## マージ後の確認
+
+### 見た目・挙動に関わる変更
+
+PR マージ後、**ユーザーに手動確認を依頼する**。自分で完了と判断しない。
+
+1. マージされたことを報告する
+2. 確認してほしい手順を具体的に伝える(どのコマンドで起動し、どこを見るか)
+3. 結果を待つ
+
+物理の挙動は数分放置して初めて分かるものが多い。
+スクリーンショット 1 枚で「直った」と判断しない。
+
+### ロジックのみの変更
+
+テストが通っていれば完了としてよい。
