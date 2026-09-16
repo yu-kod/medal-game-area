@@ -171,6 +171,34 @@ func _roulette(seed_value: int = SEED) -> Roulette:
     return auto_free(Roulette.new(seed_value))
 ```
 
+**`auto_free()` の戻り値は Variant。** このリポジトリは
+「Variant から型を推論した」警告をエラー扱いにしているので、
+`:=` で受けるとパースエラーで落ちる。**型を明示すること。**
+
+```gdscript
+# 落ちる: Parse Error: The variable type is being inferred from a Variant value
+var pool := auto_free(MedalPool.new())
+
+# 通る
+var pool: MedalPool = auto_free(MedalPool.new())
+```
+
+上の `_roulette()` のように `return auto_free(...)` で返すぶんには、
+関数の戻り値型が書いてあるので問題にならない。変数で受けるときだけ注意する。
+
+### Node は ツリーに入れないと `_ready()` が走らない
+
+`MedalPool` のように `_ready()` で中身を組み立てるクラスは、
+`add_child()` するまで空のまま。ツリーに入れる前に設定を上書きする。
+
+```gdscript
+func _pool(size: int = POOL_SIZE) -> MedalPool:
+    var pool: MedalPool = auto_free(MedalPool.new())
+    pool.pool_size = size  # ツリーに入れる前に
+    add_child(pool)
+    return pool
+```
+
 ### 落ちたときに原因が分かるようにする
 
 ループの中の assert には `override_failure_message()` を付ける。
