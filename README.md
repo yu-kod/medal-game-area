@@ -1,5 +1,7 @@
 # medal-game-area
 
+[![CI](https://github.com/yu-kod/medal-game-area/actions/workflows/ci.yml/badge.svg)](https://github.com/yu-kod/medal-game-area/actions/workflows/ci.yml)
+
 メダルゲームコーナーのシミュレーター。Godot 4.7.1 / GDScript。
 
 実機のプッシャー台を、見た目ではなく**物理で**成立させることを目標にしている。
