@@ -1,0 +1,25 @@
+# --- Godot ---
+# エディタが再生成するインポートキャッシュ。クローン後は `--headless --import` で作り直す。
+.godot/
+# *.uid は **コミットする**。Godot 4.4 以降スクリプト参照の実体がこれなので、
+# 無視するとクリーンクローンでシーンのスクリプトが外れる。
+
+# エクスポート成果物
+/build/
+/export/
+*.translation
+
+# 実行時に吐く一時ファイル
+*.tmp
+# run.ps1 -Shots の出力先をリポジトリ内に取ったとき用
+/shots/
+/screenshots/
+
+# --- ツール ---
+__pycache__/
+.venv/
+
+# --- OS ---
+Thumbs.db
+desktop.ini
+.DS_Store

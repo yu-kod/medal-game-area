@@ -1,0 +1,41 @@
+; Phase 0: コイン物理の検証用・単体プロジェクト(設計書 3章)
+; ゲーム要素は一切含まない。プッシャー1台だけ。
+
+config_version=5
+
+[application]
+
+config/name="Phase0 Pusher"
+config/description="設計書 Phase 0: コイン物理の検証シーン"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.7", "Forward Plus")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+; 描画上限を外して素の描画能力を測る(60fps 基準の判定に使う)
+window/vsync/vsync_mode=0
+
+[physics]
+
+; --- 設計書 4.3 の初期値 ---
+common/physics_ticks_per_second=120
+common/max_physics_steps_per_frame=8
+3d/physics_engine="Jolt Physics"
+jolt_physics_3d/simulation/velocity_steps=10
+jolt_physics_3d/simulation/position_steps=2
+jolt_physics_3d/simulation/baumgarte_stabilization_factor=0.2
+jolt_physics_3d/simulation/allow_sleep=true
+
+; --- スケール由来の補正(設計書には無い。Phase 0 の検証で必要になった分) ---
+; Jolt の既定 penetration_slop=0.02 はコリジョン厚 0.024 とほぼ同じ大きさで、
+; コイン同士がほぼ 1 枚分めり込むのを許してしまう。桁を下げる。
+jolt_physics_3d/simulation/penetration_slop=0.002
+jolt_physics_3d/simulation/speculative_contact_distance=0.004
+; 凸包マージンの既定 8% はコイン厚に対して大きすぎ、角が丸まって滑る。
+jolt_physics_3d/collisions/collision_margin_fraction=0.02
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
