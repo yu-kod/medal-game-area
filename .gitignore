@@ -23,3 +23,7 @@ __pycache__/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# --- テスト ---
+# gdUnit4 が吐くレポート(HTML/XML)。CI ではアーティファクトとして拾う。
+/arcade/reports/

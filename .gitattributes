@@ -1,0 +1,13 @@
+# リポジトリ内は LF に統一する。
+# Windows で書いて Linux の CI で gdformat --check にかけるので、
+# 改行が混ざるとコードが同じでもフォーマット差分として落ちる。
+* text=auto eol=lf
+
+# バイナリ扱い(改行変換をかけない)
+*.png  binary
+*.jpg  binary
+*.ogg  binary
+*.wav  binary
+*.ttf  binary
+*.zip  binary
+*.bin  binary

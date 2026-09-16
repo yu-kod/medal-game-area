@@ -1,0 +1,14 @@
+# gdlint の設定。
+#
+# class-definitions-order を無効にしている理由:
+#   このリポジトリの Spec 系(PusherSpec / MedalSpec)は、定数を「フィールド」
+#   「盤面の奥行き」のように話題ごとに固め、それぞれへ実測の根拠を書いている。
+#   gdlint 既定の並び順(const → var → func …)を強制すると、その塊と解説が
+#   バラバラになり、Phase 0 で何を確かめてこの値になったのかが読めなくなる。
+#   並びの機械的な統一より、根拠が値のそばに残っていることを優先する。
+disable:
+  - class-definitions-order
+
+max-line-length: 100
+max-file-lines: 1000
+function-arguments-number: 10
