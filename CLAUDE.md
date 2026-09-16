@@ -108,7 +108,7 @@ check.cmd -Fix             gdformat をかけてから全部
 
 - **`main`** がトランク。常に遊べる状態を保つ
 - 作業は**短命のフィーチャーブランチ**で行い、PR 経由で main にマージする
-- ブランチ命名: `feature/xxx`, `fix/xxx`, `refactor/xxx`, `chore/xxx`
+- ブランチ命名: `feature/xxx`, `fix/xxx`, `refactor/xxx`, `test/xxx`, `chore/xxx`
 - 1 つの PR は 1 つの論理的な変更に対応させる
 - **main への直接 push は禁止。** CI が通った PR のみマージする
 - マージ後のブランチは削除する
