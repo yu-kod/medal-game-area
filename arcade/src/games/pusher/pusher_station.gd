@@ -121,6 +121,7 @@ var demo_fires := 0
 var pool: MedalPool
 var plate: PusherPlate
 var rails: EntryRails
+var audio: MachineAudio
 
 var _sinks: Array[MedalSink] = []
 var _warmup := Warmup.DROPPING
@@ -146,12 +147,21 @@ func _ready() -> void:
 	rails = EntryRails.create()
 	add_child(rails)
 
+	# 音は席ごとに持つ。AudioStreamPlayer3D なので席の位置から鳴る。
+	# 遊んでいない席でも盤は動いているので、駆動音だけは鳴らす。
+	audio = MachineAudio.new()
+	audio.name = "Audio"
+	add_child(audio)
+	audio.start_motor()
+
 	if not simulated:
 		# 遊んでいない席。盤は動かすが、メダルは剛体を持たない見た目だけの山にする。
 		add_child(PusherStaticPile.create(9001 + station_index * 37))
 		set_physics_process(false)
 		return
 
+	# メダルの音は剛体が動いている席だけ。
+	audio.attach(self)
 	plate.stroke_started.connect(_on_stroke_started)
 
 	pool = MedalPool.new()
