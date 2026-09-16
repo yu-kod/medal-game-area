@@ -3,6 +3,13 @@
 # 改行が混ざるとコードが同じでもフォーマット差分として落ちる。
 * text=auto eol=lf
 
+# Windows 専用のスクリプトは CRLF のまま置く。
+# cmd.exe は LF だけのバッチで goto/label の解釈を誤ることがある。
+# PowerShell も BOM + CRLF が最も素直に読まれる。
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+
 # バイナリ扱い(改行変換をかけない)
 *.png  binary
 *.jpg  binary
