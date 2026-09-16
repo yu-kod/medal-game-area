@@ -1,0 +1,51 @@
+name: Setup Godot
+description: 指定した版の Godot を入れて godot コマンドとして使えるようにする
+
+# サードパーティの setup アクションを使わず自前で落としている。
+# 4.7.1 のような出たばかりの版は、他人のアクションの対応表に載るまで時間がかかる。
+# 公式リリースの zip を直接取れば、ローカルで使っている exe と同じ版だと確実に言える。
+
+inputs:
+  version:
+    description: Godot のバージョン(例 4.7.1)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Cache Godot
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ~/godot-bin
+        key: godot-${{ inputs.version }}-linux-x86_64
+
+    - name: Download Godot
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+        version="${{ inputs.version }}"
+        # zip の中身は Godot_v<version>-stable_linux.x86_64 が 1 つだけ。
+        name="Godot_v${version}-stable_linux.x86_64"
+        url="https://github.com/godotengine/godot/releases/download/${version}-stable/${name}.zip"
+        echo "downloading ${url}"
+        mkdir -p ~/godot-bin
+        curl -fsSL -o /tmp/godot.zip "$url"
+        unzip -q -o /tmp/godot.zip -d ~/godot-bin
+        mv ~/godot-bin/"$name" ~/godot-bin/godot
+        chmod +x ~/godot-bin/godot
+
+    - name: Add to PATH
+      shell: bash
+      run: echo "$HOME/godot-bin" >> "$GITHUB_PATH"
+
+    - name: Verify
+      shell: bash
+      run: |
+        set -euo pipefail
+        godot --version
+        # 落ちてきた版が意図した版かを確かめる。
+        # 取り違えたまま進むと、原因の分からないテスト失敗として現れる。
+        godot --version | grep -q "^${{ inputs.version }}\." \
+          || { echo "::error::Godot のバージョンが ${{ inputs.version }} ではない"; exit 1; }

@@ -1,0 +1,144 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# 同じブランチに続けて push したら古い実行は捨てる。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # ローカル(scripts/check.ps1)と同じ版を使う。上げるときは両方そろえること。
+  GODOT_VERSION: 4.7.1
+  GDTOOLKIT_VERSION: "4.*"
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      arcade: ${{ steps.filter.outputs.arcade }}
+      phase0: ${{ steps.filter.outputs.phase0 }}
+      gdscript: ${{ steps.filter.outputs.gdscript }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            arcade:
+              - 'arcade/**'
+            phase0:
+              - 'phase0-pusher/**'
+            gdscript:
+              - '**/*.gd'
+              - '.gdlintrc'
+
+  # --- 書式と静的検査 ---
+  #
+  # Godot を落とさずに済むので一番速い。壊れているならまずここで落ちてほしい。
+  lint:
+    needs: changes
+    if: needs.changes.outputs.gdscript == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # gdtoolkit の対応が読めるバージョンに固定する。
+          python-version: "3.12"
+
+      - name: Install gdtoolkit
+        run: pip install "gdtoolkit==${{ env.GDTOOLKIT_VERSION }}"
+
+      # addons/ は外部のコードなので検査から外す。
+      - name: Format check
+        run: gdformat --check arcade/src arcade/tests phase0-pusher/src
+
+      - name: Lint
+        run: gdlint arcade/src arcade/tests phase0-pusher/src
+
+  # --- 本体: インポート + テスト ---
+  arcade:
+    needs: changes
+    if: needs.changes.outputs.arcade == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-godot
+        with:
+          version: ${{ env.GODOT_VERSION }}
+
+      # クリーンなチェックアウトには .godot/ が無く、グローバルクラスが未登録。
+      # これを飛ばすと class_name を使っている全スクリプトが
+      # "Identifier not declared" で落ちる。テストの前に必ず通すこと。
+      - name: Import project
+        run: godot --path arcade --headless --import
+
+      - name: Test
+        run: |
+          godot --path arcade --headless \
+            -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd \
+            --ignoreHeadlessMode -a res://tests
+
+      # 落ちたときに何番目のテストがどう失敗したかを残す。
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdunit4-report
+          path: arcade/reports/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # --- Phase 0: 構文チェックのみ ---
+  #
+  # ここは押し出しが成立する条件を実測で確かめた検証台で、結果ごと凍結してある。
+  # 振る舞いを変えるテストは書かない。インポートが通る(= 構文とクラス登録が壊れていない)
+  # ことだけを確かめる。
+  phase0:
+    needs: changes
+    if: needs.changes.outputs.phase0 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-godot
+        with:
+          version: ${{ env.GODOT_VERSION }}
+
+      - name: Import project
+        run: godot --path phase0-pusher --headless --import
+
+  # 必須ステータスチェックはこの ci ジョブ1つだけを指定する。
+  #
+  # lint / arcade / phase0 は変更検出で skip されることがあり、skipped は success に
+  # ならない。それらを直接必須チェックに指定すると、該当ディレクトリを触っていない
+  # PR が永久にマージできなくなる。
+  # ここで結果を集約し、「失敗・キャンセルが1つもないこと」を成功条件にする。
+  ci:
+    needs: [changes, lint, arcade, phase0]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "job results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "::error::CI failed (job result: $r)"; exit 1 ;;
+            esac
+          done
+          echo "all jobs passed or were skipped"
