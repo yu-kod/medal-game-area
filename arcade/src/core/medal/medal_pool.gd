@@ -6,6 +6,11 @@ extends Node3D
 ## メダルは動的生成しない。起動時に最大数を生成しておき、使い回す。
 ## 待機中のメダルはシーンツリーから外して保持するため、物理世界のコストはゼロになる。
 
+## どれかのメダルが何かに当たった。source_id は当たったメダルのインスタンス ID。
+##
+## 音はこの signal だけを聞けばよく、700 枚の個々のメダルを知らなくていい。
+signal medal_struck(approach_speed: float, at: Vector3, source_id: int)
+
 ## ツリーに入る前に上書きできる。台に必要な枚数は台ごとに違う。
 var pool_size := 700
 
@@ -21,6 +26,7 @@ func _ready() -> void:
 	for i in pool_size:
 		var medal := Medal.create(shape, mesh, material, physics_material)
 		medal.name = "Medal%04d" % i
+		medal.struck.connect(_on_medal_struck.bind(medal))
 		_idle.append(medal)
 
 
@@ -77,3 +83,7 @@ func idle_count() -> int:
 ## プール収支の検算用。取りこぼしがあればここが pool_size からずれる。
 func total_count() -> int:
 	return _active.size() + _idle.size()
+
+
+func _on_medal_struck(approach_speed: float, at: Vector3, medal: Medal) -> void:
+	medal_struck.emit(approach_speed, at, medal.get_instance_id())

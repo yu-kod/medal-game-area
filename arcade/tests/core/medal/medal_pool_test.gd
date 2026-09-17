@@ -143,3 +143,24 @@ func test_active_medals_lists_exactly_what_was_acquired() -> void:
 
 	pool.release(first)
 	assert_bool(pool.active_medals().has(first)).is_false()
+
+
+# --- 衝突の中継(#27) ---
+
+
+func test_the_pool_relays_strikes_with_the_source_medal() -> void:
+	# 音はプールの signal だけを聞けばよく、700 枚の個々のメダルを知らなくていい。
+	var pool := _pool()
+	var medal := pool.acquire(Transform3D.IDENTITY)
+	var heard: Array = []
+	pool.medal_struck.connect(
+		func(approach: float, at: Vector3, source_id: int) -> void:
+			heard.append([approach, at, source_id])
+	)
+
+	medal.struck.emit(7.5, Vector3(1, 2, 3))
+
+	assert_int(heard.size()).is_equal(1)
+	assert_float(heard[0][0]).is_equal(7.5)
+	assert_vector(heard[0][1]).is_equal(Vector3(1, 2, 3))
+	assert_int(heard[0][2]).is_equal(medal.get_instance_id())

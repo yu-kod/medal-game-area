@@ -188,3 +188,19 @@ func _collect(picker: MedalSoundPicker, count: int) -> Array[String]:
 	for i in count:
 		picked.append(picker.pick(1 if i % 3 == 0 else (3 if i % 3 == 1 else 12)))
 	return picked
+
+
+func test_single_medal_sounds_are_one_short_strike() -> void:
+	# 1 枚の音は衝突 1 回ごとに鳴らすので、打音 1 回ぶんの長さでなければならない。
+	# 転がる余韻や跳ね返りが入った録音(以前の hjm-coindrop は 1.8〜3.5 秒)を入れると、
+	# 1 回の衝突で何枚ものコインが鳴っているように聞こえる。
+	var picker := MedalSoundPicker.from_assets()
+	for path in picker.bank(MedalSoundPicker.Layer.SINGLE):
+		var stream: AudioStream = load(path)
+		(
+			assert_float(stream.get_length())
+			. override_failure_message(
+				"%s が %.2f 秒ある。打音 1 回ぶん(0.15 秒以下)にすること" % [path, stream.get_length()]
+			)
+			. is_less(0.15)
+		)
