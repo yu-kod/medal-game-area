@@ -183,6 +183,25 @@ func test_hits_beyond_the_budget_become_one_rumble() -> void:
 	assert_int(rumbles.size()).is_equal(1)
 
 
+func test_the_rumble_plays_at_the_leftovers_center_at_their_loudest() -> void:
+	var audio := _audio()
+	var heard := _listen(audio)
+
+	# 鳴らしきれる分は大きい衝突(10.0)で埋め、残りの 2 つを x=2 と x=4 に置く。
+	for i in MachineAudio.HITS_PER_FRAME:
+		audio.note_strike(10.0, Vector3(-50, 0, 0), SOURCE_A + i, 0)
+	audio.note_strike(3.0, Vector3(2, 0, 0), SOURCE_B + 100, 0)
+	audio.note_strike(5.0, Vector3(4, 0, 0), SOURCE_B + 101, 0)
+	audio._process(0.016)
+
+	var rumbles := heard.filter(
+		func(entry: Dictionary) -> bool: return "/medal/few/" in entry["path"]
+	)
+	assert_int(rumbles.size()).is_equal(1)
+	assert_vector(rumbles[0]["at"]).is_equal(Vector3(3, 0, 0))
+	assert_float(rumbles[0]["volume_db"]).is_equal_approx(MedalStrike.volume_db(5.0), 0.001)
+
+
 func test_a_single_leftover_hit_does_not_rumble() -> void:
 	var audio := _audio()
 	var heard := _listen(audio)

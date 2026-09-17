@@ -27,6 +27,9 @@ const FULL_APPROACH := 8.0
 const GATE_SPEED := AUDIBLE_APPROACH / 2.0
 ## 1 枚あたりに報告させる接触の数。本物の台で計測した値(#27)。
 const MAX_CONTACTS_REPORTED := 4
+## 衝突した 2 枚の速さを「同じ」とみなす幅。接触点の位置の丸め誤差を吸収する。
+## 0.001 はゲーム内単位で実物の 0.1 mm/s。音の判定には十分に小さい。
+const SPEED_TIE_EPSILON := 0.001
 
 
 ## 接近速度。自分が相手へ向かって動いていれば正。
@@ -38,9 +41,12 @@ static func approach_speed(
 	return -(local_velocity - collider_velocity).dot(normal)
 
 
-## 剛体の速さ。回転しているメダルの縁の速さも含める。
+## 剛体のどこかの点が出しうる速さの上限。
+##
+## 動きながら回っているメダルの縁は、並進の速さ + 縁の回転の速さ まで出る。
+## 大きいほうだけを取ると上限を下回り、打ち切り(GATE_SPEED)に隠れる衝突が出る。
 static func body_speed(linear_velocity: Vector3, angular_velocity: Vector3) -> float:
-	return maxf(linear_velocity.length(), angular_velocity.length() * MedalSpec.RADIUS)
+	return linear_velocity.length() + angular_velocity.length() * MedalSpec.RADIUS
 
 
 static func is_audible(approach: float) -> bool:
@@ -57,9 +63,14 @@ static func volume_db(approach: float) -> float:
 ##
 ## メダル同士の衝突は両方の剛体が同じ接触を見る。速いほうだけが報告し、
 ## 同じ速さならインスタンス ID の小さいほうが報告する。これで 1 回の衝突が 1 回だけ鳴る。
+##
+## 速さは**同じ接触から見た、両者の接触点の速さ**を渡すこと。相手ノードの
+## linear_velocity を読むと、物理サーバとの同期の順番しだいで 1 ステップ古い値が混ざり、
+## 両方が報告する(実際に再現した)か、どちらも報告しなくなる。
+##
+## 両者はそれぞれ自分側の接触点で見るので、同じ速さでも丸め誤差が出る。
+## SPEED_TIE_EPSILON 以内は同じ速さとみなす。
 static func reports(own_speed: float, other_speed: float, own_id: int, other_id: int) -> bool:
-	if other_speed > own_speed:
-		return false
-	if other_speed == own_speed and other_id < own_id:
-		return false
-	return true
+	if absf(other_speed - own_speed) <= SPEED_TIE_EPSILON:
+		return own_id < other_id
+	return own_speed > other_speed

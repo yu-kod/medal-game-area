@@ -37,6 +37,13 @@ func test_body_speed_counts_the_spinning_rim() -> void:
 	assert_float(speed).is_equal_approx(20.0 * MedalSpec.RADIUS, 1e-6)
 
 
+func test_body_speed_bounds_a_spinning_and_moving_rim() -> void:
+	# 動きながら回っているメダルの縁は、並進の速さ + 縁の回転の速さ まで出る。
+	# 大きいほうだけを取ると、この上限を下回って打ち切りに隠れる衝突が出る。
+	var speed := MedalStrike.body_speed(Vector3(0.5, 0, 0), Vector3(0, 4, 0))
+	assert_float(speed).is_equal_approx(0.5 + 4.0 * MedalSpec.RADIUS, 1e-6)
+
+
 # --- 鳴らすかどうか ---
 
 
@@ -112,6 +119,20 @@ func test_harder_strikes_are_never_quieter() -> void:
 func test_the_faster_body_reports() -> void:
 	assert_bool(MedalStrike.reports(5.0, 1.0, 10, 20)).is_true()
 	assert_bool(MedalStrike.reports(1.0, 5.0, 10, 20)).is_false()
+
+
+func test_nearly_equal_speeds_still_report_exactly_once() -> void:
+	# 両方の剛体は同じ接触を、それぞれ自分側の接触点で見る。点がわずかに違うので、
+	# 同じ速さでも丸め誤差でお互いに「相手のほうが少し遅い」と見えることがある。
+	# 誤差の範囲は同じ速さとみなし、ID で決める。
+	# A から見ると B が 5.0000001、B から見ると A が 5.0000002。どちらも相手が遅く見える。
+	var a := MedalStrike.reports(5.0000004, 5.0000001, 10, 20)
+	var b := MedalStrike.reports(5.0000003, 5.0000002, 20, 10)
+	(
+		assert_bool(a != b)
+		. override_failure_message("ほぼ同じ速さの衝突が %s 回鳴る" % (2 if a and b else 0))
+		. is_true()
+	)
 
 
 func test_equal_speeds_report_exactly_once() -> void:

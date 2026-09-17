@@ -32,6 +32,10 @@ const PITCH_JITTER := 0.08
 const TRAY_BATCH_SEC := 0.12
 
 ## 同時に鳴らせる数。これを超えたら古いものから使い回す。
+##
+## AudioStreamPlayer3D.play() は次の物理フレームで鳴り始めるので、その前に同じ声を
+## 使い回すと前の音が消える。1 回の _process で鳴らすのは最大 HITS_PER_FRAME + 1 なので、
+## 物理ステップを挟まずに _process が 3 回続く(180 Hz の物理で毎秒 360 フレーム超)まで起きない。
 const VOICE_COUNT := 16
 const RANDOM_SEED := 20260917
 
@@ -197,8 +201,19 @@ func _play(path: String, at: Vector3, volume_db: float, pitch_scale: float) -> v
 	voice.play()
 
 
+## 物理ステップの中から呼ばれる(Medal._integrate_forces → MedalPool → ここ)。
+##
+## 配列と辞書に積むだけで、シーンにも音にも触らない。鳴らすのは _process。
+## これが安全なのは物理がメインスレッドで回っているから
+## (physics/3d/run_on_separate_thread が無効)。有効にするなら、ここと _process の
+## 受け渡しにロックが要る。
+##
+## 時刻は壁時計ではなく物理ステップの数から出す。フレームが詰まって同じ衝突の
+## 2 ステップ目が遅れて処理されても、間隔を正しく測れる。
 func _on_medal_struck(approach: float, at: Vector3, source_id: int) -> void:
-	note_strike(approach, at, source_id, Time.get_ticks_msec())
+	var ticks: int = ProjectSettings.get_setting("physics/common/physics_ticks_per_second")
+	var now_msec := Engine.get_physics_frames() * 1000 / ticks
+	note_strike(approach, at, source_id, now_msec)
 
 
 func _on_medal_paid() -> void:

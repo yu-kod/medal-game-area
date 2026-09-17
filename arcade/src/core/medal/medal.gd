@@ -117,10 +117,18 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		return
 
 	# 相手もメダルなら、速いほうだけが報告する。同じ衝突を 2 回鳴らさない。
+	#
+	# 速さは同じ接触から見た両者の接触点の速さで比べる。相手ノードの
+	# linear_velocity は同期の順番しだいで 1 ステップ古く、両方が報告してしまう(再現済み)。
 	var other := state.get_contact_collider_object(strongest_index)
 	if other is RigidBody3D:
-		var other_speed := MedalStrike.body_speed(other.linear_velocity, other.angular_velocity)
-		if not MedalStrike.reports(speed, other_speed, get_instance_id(), other.get_instance_id()):
+		var own_at_contact := state.get_contact_local_velocity_at_position(strongest_index).length()
+		var other_at_contact := (
+			state.get_contact_collider_velocity_at_position(strongest_index).length()
+		)
+		if not MedalStrike.reports(
+			own_at_contact, other_at_contact, get_instance_id(), other.get_instance_id()
+		):
 			return
 
 	struck.emit(strongest, state.get_contact_local_position(strongest_index))
