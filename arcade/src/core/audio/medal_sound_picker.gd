@@ -22,11 +22,15 @@ const MANY_MIN := 6
 const ASSET_DIR := "res://assets/audio/medal"
 const TRAY_DIR := "res://assets/audio/tray"
 
-## ファイル名の接頭辞と系統の対応。docs/audio-credits.md の表と揃える。
-const ASSET_PREFIXES := {
-	Layer.SINGLE: "chips-collide",
-	Layer.FEW: "chips-stack",
-	Layer.MANY: "chips-handle",
+## メダル音は系統ごとのサブディレクトリに置く。docs/audio-credits.md の表と揃える。
+##
+## 出自の違う素材(Vinrax / Malthaner / StarNinjas / Kenney)が混ざるので、
+## ファイル名の接頭辞では振り分けられない。置き場所で決める。
+## 差し替えるときはファイルを動かすだけで、ここは触らなくていい。
+const LAYER_DIRS := {
+	Layer.SINGLE: "single",
+	Layer.FEW: "few",
+	Layer.MANY: "many",
 }
 
 ## トレイの金属音も同じ「枚数で選ぶ」形に乗る。
@@ -62,7 +66,10 @@ static func layer_for(count: int) -> Layer:
 
 ## 盤面のメダル音。
 static func from_assets(seed_value: int = 20260916) -> MedalSoundPicker:
-	return from_dir(ASSET_DIR, ASSET_PREFIXES, seed_value)
+	var banks := {}
+	for layer in LAYER_DIRS:
+		banks[layer] = _audio_files_in("%s/%s" % [ASSET_DIR, LAYER_DIRS[layer]])
+	return MedalSoundPicker.new(banks, seed_value)
 
 
 ## 払い出しトレイの金属音。
@@ -78,13 +85,29 @@ static func from_dir(dir: String, prefixes: Dictionary, seed_value: int) -> Meda
 	for layer in prefixes:
 		var bank: Array[String] = []
 		for file_name in names:
-			# 取り込み後は .import が付くことがあるので拡張子で絞る
-			if not file_name.ends_with(".ogg"):
-				continue
-			if file_name.begins_with(prefixes[layer]):
+			if is_audio_file(file_name) and file_name.begins_with(prefixes[layer]):
 				bank.append("%s/%s" % [dir, file_name])
 		banks[layer] = bank
 	return MedalSoundPicker.new(banks, seed_value)
+
+
+## 音源として扱うファイルか。
+##
+## 素材は元の形式のまま取り込む(変換すると出自が追えなくなる)ので OGG と WAV の両方を読む。
+## 取り込み後に横へできる .import / .uid は除く。
+static func is_audio_file(file_name: String) -> bool:
+	return file_name.ends_with(".ogg") or file_name.ends_with(".wav")
+
+
+## ディレクトリ内の音源を名前順に並べて返す。
+static func _audio_files_in(dir: String) -> Array[String]:
+	var names := DirAccess.get_files_at(dir)
+	names.sort()  # 並びを固定しないと種を固定しても再現しない
+	var files: Array[String] = []
+	for file_name in names:
+		if is_audio_file(file_name):
+			files.append("%s/%s" % [dir, file_name])
+	return files
 
 
 ## この系統の音源一覧。
