@@ -160,14 +160,14 @@ func _ready() -> void:
 		set_physics_process(false)
 		return
 
-	# メダルの音は剛体が動いている席だけ。
-	audio.attach(self)
 	plate.stroke_started.connect(_on_stroke_started)
 
 	pool = MedalPool.new()
 	pool.name = "MedalPool"
 	pool.pool_size = PusherSpec.POOL_SIZE
 	add_child(pool)
+	# メダルの音は剛体が動いている席だけ。衝突はプールから届くので、プールの後でつなぐ。
+	audio.attach(self)
 
 	_build_sinks()
 	_build_lottery()
