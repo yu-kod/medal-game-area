@@ -9,6 +9,8 @@ extends CanvasLayer
 const TEXT_ORIGIN := Vector2(24.0, 52.0)
 
 var machine: PusherStation
+## 今日のシフト。main.gd が渡す。無ければ現金の行を出さない。
+var work_shift: WorkShift
 
 var _label: Label
 var _elapsed := 0.0
@@ -69,3 +71,13 @@ func _process(delta: float) -> void:
 			machine.hopper.pending() if machine.hopper != null else 0,
 		]
 	)
+	if work_shift != null:
+		_label.text += (
+			"\n現金 %d 円  今日あと %d 円  [W] 働く"
+			% [
+				machine.wallet.cash(),
+				work_shift.remaining_today(
+					Time.get_unix_time_from_system(), WorkControls.local_utc_offset_sec()
+				),
+			]
+		)
