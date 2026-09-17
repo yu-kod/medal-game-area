@@ -126,3 +126,31 @@ func test_a_clock_moved_backwards_does_not_report_negative_days() -> void:
 	var state := PlayerState.new()
 	state.stamp_visit(1_700_000_000)
 	assert_int(state.days_since_visit(1_600_000_000)).is_equal(0)
+
+
+# --- シフト(#5) ---
+
+
+func test_shift_fields_survive_a_round_trip() -> void:
+	var state := PlayerState.new()
+	state.daily_work_remaining = 1234
+	state.daily_work_date = 20713
+
+	var restored := PlayerState.from_dict(state.to_dict())
+
+	assert_int(restored.daily_work_remaining).is_equal(1234)
+	assert_int(restored.daily_work_date).is_equal(20713)
+
+
+func test_a_save_from_before_shifts_existed_still_loads() -> void:
+	# #14 の時点のセーブにはシフトの項目が無い。
+	var restored := PlayerState.from_dict({"version": 1, "cash": 500, "stored_last_visit": 1})
+	assert_int(restored.cash).is_equal(500)
+	assert_int(restored.daily_work_remaining).is_equal(0)
+	assert_int(restored.daily_work_date).is_equal(0)
+
+
+func test_negative_shift_values_are_clamped() -> void:
+	var restored := PlayerState.from_dict({"daily_work_remaining": -50, "daily_work_date": -3})
+	assert_int(restored.daily_work_remaining).is_equal(0)
+	assert_int(restored.daily_work_date).is_equal(0)

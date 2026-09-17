@@ -8,8 +8,8 @@ extends RefCounted
 ## 手持ちが毎回消えることが、預かりと失効という仕組みが要る理由そのもの。
 ## §7.3 の「残高は常にゼロ付近を推移する」もここに乗っている。
 ##
-## いま実際に持っているのは現金と来店日だけ。
-## xp / xp_tier / stored_medals / prizes / daily_work_remaining は
+## いま実際に持っているのは現金・来店日・今日のシフトだけ。
+## xp / xp_tier / stored_medals / prizes は
 ## それぞれの担当チケットで足す。**項目が増えても古いセーブは読める**ように、
 ## 欠けている項目は既定値で埋める。
 
@@ -22,6 +22,10 @@ const SECONDS_PER_DAY := 86400
 var cash := 0
 ## 最終来店の Unix 時刻。0 は未訪問。預かりメダルの失効判定に使う。
 var stored_last_visit := 0
+## 今日のシフトであと何円稼げるか(WorkShift)。
+var daily_work_remaining := 0
+## daily_work_remaining がどの日のものか。WorkShift.day_of() の値。0 は未就労。
+var daily_work_date := 0
 
 
 ## 書き出す形。**手持ちメダルの項目は作らない。**
@@ -30,6 +34,8 @@ func to_dict() -> Dictionary:
 		"version": VERSION,
 		"cash": cash,
 		"stored_last_visit": stored_last_visit,
+		"daily_work_remaining": daily_work_remaining,
+		"daily_work_date": daily_work_date,
 	}
 
 
@@ -41,6 +47,8 @@ static func from_dict(data: Dictionary) -> PlayerState:
 	var state := PlayerState.new()
 	state.cash = _read_int(data, "cash")
 	state.stored_last_visit = _read_int(data, "stored_last_visit")
+	state.daily_work_remaining = _read_int(data, "daily_work_remaining")
+	state.daily_work_date = _read_int(data, "daily_work_date")
 	return state
 
 

@@ -21,6 +21,7 @@ var island: PusherIsland
 var wallet: PlayerWallet
 var camera: Camera3D
 var save_state: PlayerState
+var work_shift: WorkShift
 
 
 func _ready() -> void:
@@ -43,6 +44,8 @@ func _ready() -> void:
 	# §8 のとおり跨いで残る資産は預かりメダルだけ。毎回 --credit から始める。
 	wallet.add_medals(int(options.get("credit", DEFAULT_CREDIT)))
 	wallet.cash_changed.connect(_on_cash_changed)
+	# 今日のシフト。再起動しても上限は戻らない。
+	work_shift = WorkShift.from_state(save_state)
 
 	island = PusherIsland.new()
 	island.name = "PusherIsland"
@@ -72,7 +75,11 @@ func _ready() -> void:
 	)
 
 	if options.has("debug"):
-		add_child(DevHud.create(island.player_station()))
+		var hud := DevHud.create(island.player_station())
+		hud.work_shift = work_shift
+		add_child(hud)
+		# 本番の「働く」画面ができるまでの検証用。W キーで 1 回働く。
+		add_child(WorkControls.create(wallet, work_shift))
 
 	if options.has("shots"):
 		add_child(
@@ -85,12 +92,14 @@ func _ready() -> void:
 		_quit_after(float(options["seconds"]))
 
 
-## 現金が動いたら書き出す。
+## 現金が動いたら書き出す。今日のシフトの残りも一緒に書く。
 ##
 ## 終了時だけに寄せると、落ちたときに丸ごと失う。変わった時点で書く。
-## クリッカー(#5)が入って更新が毎秒になるようなら、そこで間引きを考える。
+## 働いて現金が増えるのは作業の間隔(WorkShift.TASK_INTERVAL_SEC、約 3.3 秒)に
+## 1 回までなので、書き込みはそれ以上の頻度にならない。間引きは要らない。
 func _on_cash_changed(cash: int) -> void:
 	save_state.cash = cash
+	work_shift.write_to(save_state)
 	SaveStore.save(save_state)
 
 
