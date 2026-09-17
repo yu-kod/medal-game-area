@@ -41,7 +41,8 @@ var remaining := DAILY_CAP_YEN
 ## remaining がどの日のものか。day_of() の値。0 はまだ働いていない。
 var work_day := 0
 
-var _last_task_unix := -1.0
+## 最後に稼いだ時刻。**単調に進む時計**で持つ(壁時計ではない)。
+var _last_task_steady := -1.0
 
 
 ## その時刻が属する日。time zone のぶんずらしてから日で割る。
@@ -68,15 +69,28 @@ func write_to(state: PlayerState) -> void:
 
 
 ## 1 回働く。得た額を返す(稼げなかったら 0)。
-func work(wallet: PlayerWallet, now_unix: float, utc_offset_sec := 0) -> int:
+##
+## 時計を 2 つ受け取る。
+## - now_unix: 壁時計。**日付を決めるためだけ**に使う
+## - steady_sec: 起動からの経過秒など、単調に進む時計。**作業の間隔**に使う。
+##   省略すると now_unix で代用する(テストで 1 本の時計だけ回すとき)
+##
+## 間隔を壁時計で測ると、時計を巻き戻すたびに 1 回ぶん早く稼げてしまう。
+##
+## 稼げなかった呼び出しでも日付の繰り上げは起きるが、それは保存しない。
+## 保存は現金が動いたときだけで、読み直せば同じ繰り上げがもう一度起きるだけなので害は無い。
+func work(wallet: PlayerWallet, now_unix: float, utc_offset_sec := 0, steady_sec := -1.0) -> int:
+	var steady := steady_sec if steady_sec >= 0.0 else now_unix
 	_roll_day(now_unix, utc_offset_sec)
-	if _too_soon(now_unix):
+	if _too_soon(steady):
 		return 0
 	if remaining <= 0:
 		return 0
 	var pay := mini(YEN_PER_TASK, remaining)
+	# 現金を足すと cash_changed 経由で保存が走る。残りを先に減らしておかないと、
+	# 減る前の残りが保存されてしまう。
 	remaining -= pay
-	_last_task_unix = now_unix
+	_last_task_steady = steady
 	wallet.add_cash(pay)
 	return pay
 
@@ -90,15 +104,25 @@ func remaining_today(now_unix: float, utc_offset_sec := 0) -> int:
 
 ## 日付が進んでいたらシフトを満タンに戻す。
 ##
-## 時計が巻き戻っていたら何もしない。戻すと、日付をいじるだけで上限が復活する。
+## 時計が巻き戻っていたら上限は戻さない。戻すと、日付をいじるだけで上限が復活する。
+##
+## ただし記録の日付が 2 日以上先にある場合は、日付だけを今日に引き戻す(残りはそのまま)。
+## 時計が一時的に数年先を指していた・セーブが壊れていた、というときに、
+## その未来の日が来るまで働けなくなるのを防ぐ。1 日ぶんの余裕は時差のある移動のため。
+##
+## この引き戻しには代償がある。時計を 2 日以上戻してから元に戻すと、上限が 1 回戻る。
+## 一人で遊ぶゲームで時計を手でいじるのは自分をだますだけなので、
+## 正直なプレイヤーが締め出されないほうを取った。
 func _roll_day(now_unix: float, utc_offset_sec: int) -> void:
 	var today := day_of(now_unix, utc_offset_sec)
 	if today > work_day:
 		work_day = today
 		remaining = DAILY_CAP_YEN
+	elif work_day > today + 1:
+		work_day = today
 
 
-func _too_soon(now_unix: float) -> bool:
-	if _last_task_unix < 0.0 or now_unix < _last_task_unix:
+func _too_soon(steady: float) -> bool:
+	if _last_task_steady < 0.0 or steady < _last_task_steady:
 		return false
-	return now_unix - _last_task_unix < TASK_INTERVAL_SEC - PACE_TOLERANCE_SEC
+	return steady - _last_task_steady < TASK_INTERVAL_SEC - PACE_TOLERANCE_SEC

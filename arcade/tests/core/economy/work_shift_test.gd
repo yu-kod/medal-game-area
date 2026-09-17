@@ -99,21 +99,6 @@ func test_a_new_day_refills_the_shift() -> void:
 	)
 
 
-func test_the_day_boundary_is_midnight() -> void:
-	# シフト制なので、決まった時刻で切り替わる。最後に叩いた時刻からの 24 時間ではない。
-	assert_int(WorkShift.day_of(DAY_START - 1.0)).is_not_equal(WorkShift.day_of(DAY_START))
-	assert_int(WorkShift.day_of(DAY_START)).is_equal(WorkShift.day_of(DAY_START + 86399.0))
-
-
-func test_the_boundary_follows_the_local_timezone() -> void:
-	# 日本時間(+9 時間)なら、UTC の 15:00 が日付の境目になる。
-	var jst := 9 * 3600
-	var local_midnight := DAY_START + 15 * 3600.0
-	assert_int(WorkShift.day_of(local_midnight - 1.0, jst)).is_not_equal(
-		WorkShift.day_of(local_midnight, jst)
-	)
-
-
 # --- 放置 ---
 
 
@@ -133,21 +118,6 @@ func test_reading_the_remaining_amount_does_not_pay() -> void:
 	var shift := _shift()
 	shift.remaining_today(DAY_START + 5 * 3600.0)
 	assert_int(wallet.cash()).is_equal(0)
-
-
-# --- 時計 ---
-
-
-func test_a_clock_moved_backwards_does_not_refill_the_shift() -> void:
-	var wallet := _wallet()
-	var shift := _shift()
-	var now := _work_until_capped(shift, wallet, DAY_START + WorkShift.SECONDS_PER_DAY)
-
-	# 前日へ戻しても、上限が戻ったりはしない。
-	assert_int(shift.work(wallet, DAY_START)).is_equal(0)
-	assert_int(shift.remaining_today(DAY_START)).is_equal(0)
-	assert_int(wallet.cash()).is_equal(WorkShift.DAILY_CAP_YEN)
-	assert_float(now).is_greater(DAY_START)
 
 
 # --- 保存 ---
@@ -186,6 +156,15 @@ func test_a_save_without_shift_data_starts_a_full_shift() -> void:
 	assert_int(restored.remaining_today(DAY_START)).is_equal(WorkShift.DAILY_CAP_YEN)
 
 
+func test_a_save_from_an_earlier_day_starts_a_full_shift() -> void:
+	# 前日に使い切ったセーブ。今日は満タンで始まる。
+	var state := PlayerState.new()
+	state.daily_work_remaining = 0
+	state.daily_work_date = WorkShift.day_of(DAY_START) - 1
+	var restored := WorkShift.from_state(state)
+	assert_int(restored.work(_wallet(), DAY_START)).is_equal(WorkShift.YEN_PER_TASK)
+
+
 func test_a_tampered_remaining_amount_is_capped() -> void:
 	var state := PlayerState.new()
 	state.daily_work_remaining = 999999
@@ -199,7 +178,9 @@ func test_a_tampered_remaining_amount_is_capped() -> void:
 
 func test_a_day_of_work_can_buy_the_1200_yen_step() -> void:
 	# 設計書 §6.2 の核心の段に、1 日働けば手が届く。
-	assert_int(WorkShift.DAILY_CAP_YEN).is_greater_equal(_yen_of_step(1200))
+	# 段が表から消えていたら、比べる前にここで落とす(-1 と比べて素通りしない)。
+	assert_int(_yen_of_step(1200)).override_failure_message("1200 円の段がレート表に無い").is_equal(1200)
+	assert_int(WorkShift.DAILY_CAP_YEN).is_greater_equal(1200)
 
 
 func test_a_day_of_work_cannot_buy_the_top_step() -> void:

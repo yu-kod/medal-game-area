@@ -12,6 +12,10 @@ const WORK_KEY := KEY_W
 
 var wallet: PlayerWallet
 var shift: WorkShift
+## 日付を決める壁時計。テストで差し替えられるように外に出してある。
+var clock: Callable
+## 作業の間隔を測る、単調に進む時計(秒)。
+var steady_clock: Callable
 
 
 static func create(target_wallet: PlayerWallet, target_shift: WorkShift) -> WorkControls:
@@ -19,10 +23,15 @@ static func create(target_wallet: PlayerWallet, target_shift: WorkShift) -> Work
 	controls.name = "WorkControls"
 	controls.wallet = target_wallet
 	controls.shift = target_shift
+	controls.clock = Time.get_unix_time_from_system
+	controls.steady_clock = func() -> float: return Time.get_ticks_msec() / 1000.0
 	return controls
 
 
 ## いまの日本時間などの時差(秒)。日付の境目をその土地の 0 時に合わせる。
+##
+## Windows では bias に夏時間が含まれないので、夏時間のある地域では境目が 1 時間ずれる。
+## 日本には夏時間が無いので、いまは気にしない。
 static func local_utc_offset_sec() -> int:
 	return int(Time.get_time_zone_from_system().get("bias", 0)) * 60
 
@@ -33,4 +42,4 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.keycode != WORK_KEY:
 		return
-	shift.work(wallet, Time.get_unix_time_from_system(), local_utc_offset_sec())
+	shift.work(wallet, clock.call(), local_utc_offset_sec(), steady_clock.call())
