@@ -140,11 +140,44 @@ func test_the_shipped_assets_cover_every_layer() -> void:
 		)
 
 
-func test_shipped_sounds_actually_load() -> void:
+func test_every_shipped_sound_actually_loads() -> void:
+	# 1 つ選んで読むだけだと、WAV の取り込みに失敗した素材を見逃す。全部読む。
+	for picker in [MedalSoundPicker.from_assets(), MedalSoundPicker.from_tray_assets()]:
+		for layer in [
+			MedalSoundPicker.Layer.SINGLE, MedalSoundPicker.Layer.FEW, MedalSoundPicker.Layer.MANY
+		]:
+			for path in picker.bank(layer):
+				(
+					assert_object(load(path))
+					. override_failure_message("読めない音源: %s" % path)
+					. is_not_null()
+				)
+
+
+func test_medal_sounds_are_sorted_by_layer_directory() -> void:
+	# 出自の違う素材が混ざるので、ファイル名ではなく置き場所で系統を決める。
+	# 次に差し替えるときはファイルを動かすだけで済む。
 	var picker := MedalSoundPicker.from_assets()
-	var path := picker.pick(1)
-	assert_str(path).is_not_empty()
-	assert_object(load(path)).is_not_null()
+	var expected := {
+		MedalSoundPicker.Layer.SINGLE: "/medal/single/",
+		MedalSoundPicker.Layer.FEW: "/medal/few/",
+		MedalSoundPicker.Layer.MANY: "/medal/many/",
+	}
+	for layer in expected:
+		for path in picker.bank(layer):
+			assert_str(path).contains(expected[layer])
+
+
+func test_both_ogg_and_wav_count_as_audio() -> void:
+	# 元の形式のまま取り込む(変換すると出自が追えなくなる)ので両方読む。
+	assert_bool(MedalSoundPicker.is_audio_file("coin_drop.ogg")).is_true()
+	assert_bool(MedalSoundPicker.is_audio_file("hjm-coindrop_v1.wav")).is_true()
+
+
+func test_import_sidecars_and_other_files_are_not_audio() -> void:
+	assert_bool(MedalSoundPicker.is_audio_file("coin_drop.ogg.import")).is_false()
+	assert_bool(MedalSoundPicker.is_audio_file("License.txt")).is_false()
+	assert_bool(MedalSoundPicker.is_audio_file("coin_drop.ogg.uid")).is_false()
 
 
 # --- ヘルパー ---

@@ -8,34 +8,56 @@
 
 ## 出典
 
-| 出典 | ライセンス | 作者 | 取得日 |
-|---|---|---|---|
-| [Kenney — Casino Audio](https://kenney.nl/assets/casino-audio) | CC0 1.0 | Kenney Vleugels | 2026-09-16 |
-| [Kenney — Impact Sounds](https://kenney.nl/assets/impact-sounds) | CC0 1.0 | Kenney Vleugels | 2026-09-16 |
-| [OpenGameArt — 30 CC0 SFX loops](https://opengameart.org/content/30-cc0-sfx-loops) | CC0 1.0 | rubberduck | 2026-09-16 |
+| 出典 | 使っている音 | ライセンス | 作者 | 取得日 |
+|---|---|---|---|---|
+| [OpenGameArt — Coin Drop](https://opengameart.org/content/coin-drop) | メダル 1 枚 | CC0 1.0 | Vinrax | 2026-09-17 |
+| [OpenGameArt — Coin Sounds](https://opengameart.org/content/coin-sounds-0) | メダル 1 枚 | **CC-BY 3.0** | Hansjörg Malthaner | 2026-09-17 |
+| [OpenGameArt — 12 Coin Sound Effects](https://opengameart.org/content/12-coin-sound-effects) | メダル 数枚 | CC0 1.0 | StarNinjas | 2026-09-17 |
+| [Kenney — RPG Audio](https://kenney.nl/assets/rpg-audio) | メダル 大量 | CC0 1.0 | Kenney Vleugels | 2026-09-17 |
+| [Kenney — Impact Sounds](https://kenney.nl/assets/impact-sounds) | 払い出しトレイ | CC0 1.0 | Kenney Vleugels | 2026-09-16 |
+| [OpenGameArt — 30 CC0 SFX loops](https://opengameart.org/content/30-cc0-sfx-loops) | プッシャー駆動音 | CC0 1.0 | rubberduck | 2026-09-16 |
 
-**すべて CC0(パブリックドメイン)。** 商用・非商用を問わず、表示義務なしで使える。
 Kenney 分はアーカイブ同梱のライセンス原文を `docs/licenses/` にそのまま置いた。
 OpenGameArt 分は同梱が無いので、上記ページの記載と作者名が根拠になる。
 
 パックの全体ではなく**使う音だけ**を取り込んでいる。
-残りはカード・サイコロ・足音・水音で、この台には要らない。
+
+### 表示(CC-BY 3.0)
+
+次の素材は CC-BY 3.0 で、**表示が義務**。配布物にクレジットを載せるときはこの文言を使う。
+
+> Coin Sounds by **Hansjörg Malthaner** — <http://opengameart.org/users/varkalandar>
+> licensed under CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+>
+> 使用ファイル: `hjm-coindrop_v1.wav`, `hjm-coindrop_v2.wav`(改変なし)
+
+この素材は CC-BY / CC-BY-SA / GPL などから選べる複数ライセンスで公開されている。
+このリポジトリでは **CC-BY 3.0** を選んで使っている。
+
+StarNinjas はクレジットを「お願い」している(CC0 なので義務ではない)。
+クレジット画面を作るときは載せる。
 
 ---
 
 ## 役割の対応
 
-### メダルの落下音 — `arcade/assets/audio/medal/`
+### メダルの落下音 — `arcade/assets/audio/medal/{single,few,many}/`
 
 設計書 §11 が要求する「1枚 / 数枚 / 大量 の 3 系統」に対応させる。
+**系統はサブディレクトリで決まる。** 差し替えるときはファイルを動かすだけで、コードは触らなくていい。
 
-| 系統 | ファイル | 枚数の目安 |
-|---|---|---|
-| 1 枚 | `chips-collide-1..4.ogg` | 1 枚が落ちた / 当たった |
-| 数枚 | `chips-stack-1..6.ogg` | 数枚がまとまって動いた |
-| 大量 | `chips-handle-1..6.ogg` | 山が崩れた・押し出された |
+| 系統 | 置き場所 | ファイル | 長さ |
+|---|---|---|---|
+| 1 枚 | `medal/single/` | `coin_drop.ogg` | 1.42 s |
+| | | `hjm-coindrop_v1.wav` | 3.50 s |
+| | | `hjm-coindrop_v2.wav` | 1.81 s |
+| 数枚 | `medal/few/` | `coin.1..12.ogg`(手の中で鳴らしたもの) | 0.33〜0.62 s |
+| 大量 | `medal/many/` | `handleCoins.ogg` / `handleCoins2.ogg` | 0.85 s / 0.34 s |
 
 同系統の中でもランダムに散らす。同じサンプルが続くと即座に嘘だとバレる。
+「連続させない」を満たすため、**各系統に 2 つ以上**置くこと(テストで見張っている)。
+
+WAV と OGG の両方を読む。**元の形式のまま入れる**(変換すると出自が追えなくなる)。
 
 ### 払い出しトレイの金属音 — `arcade/assets/audio/tray/`
 
@@ -51,43 +73,48 @@ OpenGameArt 分は同梱が無いので、上記ページの記載と作者名�
 
 | ファイル | 長さ | 備考 |
 |---|---|---|
-| `machine_11.ogg` | 5.67 s | **既定候補。**いちばん長く、繰り返しが目立ちにくい |
+| `machine_11.ogg` | 5.67 s | **既定。**いちばん長く、繰り返しが目立ちにくい |
 | `machine_08.ogg` | 4.53 s | |
 | `machine_06.ogg` | 3.17 s | `PusherSpec.PUSHER_CYCLE_SEC`(3.0 s)に近い。往復に同期させたいならこれ |
 | `machine_09.ogg` | 2.70 s | 最も短い |
 
 ---
 
-## 正直な注意: 音は聴いて確かめていない
+## 経緯
 
-**これらの音が実際にメダルらしく聞こえるかは確認できていない。**
-ファイル名・長さ・出典から選んだだけで、再生して判断してはいない。
-最終的な採否は耳で決めてほしい。
+### 1 回目: カジノチップ(不採用)
 
-聴くには `play.cmd -Debug -Demo`。
+最初は [Kenney — Casino Audio](https://kenney.nl/assets/casino-audio) の `chips-*` を
+メダル音に使っていた(#20)。聴いてもらった結果:
 
-### 想定される外れ方と差し替え先
+> chipsはプラスチックに聞こえる
 
-いちばんありそうなのは **カジノチップは粘土やプラスチック、メダルは真鍮**という素材の違い。
-チップ音が鈍く、金属らしく聞こえない可能性がある。
+カジノチップは粘土・プラスチックで、メダルは真鍮なので質が根本から違った。
+**コインとして録音された素材に差し替えて削除した**(#23)。ファイルは履歴に残っている。
 
-その場合の差し替え先は**すでにリポジトリに入っている**。
+---
 
-- 1 枚の音が鈍い → `tray/impactMetal_light_*.ogg` を 1 枚の音に回す
-- 逆に金属的すぎる → `medal/chips-*.ogg` に戻す
+## 音は聴いて確かめていない
 
-どちらも追加のダウンロードは要らない。
+**ここに並んでいる音がメダルらしく聞こえるかは、選んだ側では確認できていない。**
+出典・長さ・「コインとして録音された」という出自から選んでいる。
+採否は耳で決める。聴くには `play.cmd -Debug -Demo`。
+
+### まだ外れていた場合の差し替え先(ダウンロード不要)
+
+- 1 枚の音が長すぎる / 転がる余韻が邪魔 → `hjm-coindrop_v1.wav`(3.50 s)を `single/` から外す。
+  それでも長ければ `tray/impactMetal_light_*.ogg` を `single/` にコピーする
+- 数枚・大量の音が「袋の中」に聞こえる → `tray/impactMetal_medium_*` を `few/` に足す
 
 ### それでも合わない場合
 
-[Freesound](https://freesound.org) に実機のメダルプッシャーを録音した素材がある。
+[Freesound](https://freesound.org) に実機のメダルプッシャーやコインの録音がある。
 ただし**ダウンロードにアカウントが必要**なので、そこは手で取ってもらう必要がある。
 
 - 検索語の例: `coin drop metal`, `token hopper`, `arcade coin pusher`
 - **ライセンスを必ず確認すること。** Freesound は CC0 / CC-BY / CC-BY-NC が混在する。
   このリポジトリは公開されているので、**CC0 か CC-BY のみ**にする
-  (CC-BY を使う場合はこのファイルに表示を追加する)
-- 置き場所は上の表と同じ `arcade/assets/audio/{medal,tray,motor}/`
+- 置き場所は上の表と同じ。メダル音なら `medal/single|few|many/` のどれかに入れるだけ
 - 置いたら `play.cmd -Import` を 1 度通す
 
 ---
@@ -95,6 +122,7 @@ OpenGameArt 分は同梱が無いので、上記ページの記載と作者名�
 ## ファイルを足すときの決まり
 
 - **元のファイル名を変えない。** どのパックのどの音かを追えなくする
-- 役割への割り当てはコード側で行う。ファイル名でごまかさない
+- **元の形式のまま入れる。** 変換しない
+- メダル音の系統は**置くディレクトリで決める**。ファイル名でごまかさない
 - 出典・ライセンス・取得日をこの表に追記する
-- CC0 以外を入れるときは、表示義務の有無をここに明記する
+- CC0 以外を入れるときは、表示義務と表示文言をここに明記する

@@ -68,7 +68,7 @@ func test_a_pile_collapse_uses_the_many_layer() -> void:
 	audio._process(MachineAudio.BATCH_SEC)
 
 	(
-		assert_bool(heard[0].contains("chips-handle"))
+		assert_bool(heard[0].contains("/medal/many/"))
 		. override_failure_message("大量のはずが %s を選んだ" % heard[0])
 		. is_true()
 	)
@@ -81,7 +81,7 @@ func test_a_single_medal_uses_the_single_layer() -> void:
 	audio.note_medals(1)
 	audio._process(MachineAudio.BATCH_SEC)
 
-	assert_bool(heard[0].contains("chips-collide")).is_true()
+	assert_bool(heard[0].contains("/medal/single/")).is_true()
 
 
 func test_nothing_plays_before_the_window_closes() -> void:
@@ -119,7 +119,7 @@ func test_the_counter_resets_between_batches() -> void:
 	audio._process(MachineAudio.BATCH_SEC)
 
 	(
-		assert_bool(heard[1].contains("chips-collide"))
+		assert_bool(heard[1].contains("/medal/single/"))
 		. override_failure_message("2 回目が %s。前の窓の枚数が残っている" % heard[1])
 		. is_true()
 	)
